@@ -5,8 +5,8 @@ module Fastlane
         require 'json'
         v_beta = Actions::InnoGetBetaVersionAction.run(params)
         v_rc = Actions::InnoGetRcVersionAction.run(params)
-        if v_rc.major > v_beta.major || (v_rc.minor > v_beta.minor && v_rc.major == v_beta.major)
-          v_beta.minor = v_rc.minor
+        if v_rc.major > v_beta.major || (v_rc.minor >= v_beta.minor && v_rc.major == v_beta.major)
+          v_beta.minor = v_rc.minor + 1
           v_beta.major = v_rc.major
           v_beta.build = 0
         end
