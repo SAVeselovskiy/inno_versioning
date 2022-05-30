@@ -15,17 +15,17 @@ module Fastlane
           elsif major < v_rc.major
             raise "Wrong major number specified in Info.plist. Version major number can't be less than current major number on app store (and versions.json file)"
           elsif v_release.major < v_rc.major || v_release.minor < v_rc.minor
-            v_rc.build += 1
+            v_rc.patch += 1
           else
             v_rc.minor += 1
-            v_rc.build = 1
+            v_rc.patch = 0
           end
         else
           if v_release.major < v_rc.major || v_release.minor < v_rc.minor
-            v_rc.build += 1
+            v_rc.patch += 1
           else
             v_rc.minor += 1
-            v_rc.build = 1
+            v_rc.patch = 0
           end
         end
         
