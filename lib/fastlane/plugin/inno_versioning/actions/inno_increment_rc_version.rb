@@ -5,7 +5,7 @@ module Fastlane
         require 'json'
         v_rc = Actions::InnoGetRcVersionAction.run(params)
         v_release = Actions::InnoGetReleaseVersionAction.run(params)
-        if GetVersionNumberAction.is_supported?
+        if GetVersionNumberAction.is_supported?(ENV["FASTLANE_PLATFORM_NAME"])
           build = GetVersionNumberAction.run(xcodeproj: ENV["xcodeproj"], target: ENV["target"])
           major = build.split('.')[0].to_i
           if major > v_rc.major
