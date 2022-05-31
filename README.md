@@ -12,41 +12,79 @@ fastlane add_plugin inno_versioning
 
 ## About inno_versioning
 
-Innotech plugin for automatic versioning
+Плагин для автоматизации версионирования. 
 
-**Note to author:** Add a more detailed description about this plugin here. If your plugin contains multiple actions, make sure to mention them here.
+На билд-машине должен хранится json-файл с версиями, в котором хранятся все актуальные версии. В плагине описаны правила подъема номера версии для 3 версий приложения: beta, rc, release.
+Есть три типа методов для каждой версии: 
+1) get_version - получить объект версии для текущего лейна (например, inno_get_beta_version),
+2) increment_version - увеличить номер версии (например, inno_increment_beta_version),
+3) save_version - увеличить номер версии (например, inno_save_beta_version).
+
+Правила инкремента номеров версий:
+
+** Beta **
+При инкременте бета версии проверяется, не выше ли она версии RC. Если бета версия выше версии релиз кандидата, то инкрементится номер билда. В противном случае номер бета версии становится равном версии релиз кандидата, но с минорным номер на 1 выше. Пример:
+```  
+// Если RC выше или равен бете (0.1.1(0)):
+'0.1.0(4)' -> '0.2.0(0)'
+
+// В противном случае
+'0.1.0(1)' -> '0.1.0(2)'
+```
+
+** Release Candidate **
+
+При инкременте версии Release Candidate6 проверяется, если release версия меньше, то увеличивается patch номер (случай когда перед релизом выпускаются хотфиксы для релиз кандидата). В противном случае инкрементится minor и сбрасывается patch. Пример:
+```  
+// Если release выше или равен rc:
+'0.1.0(0)' -> '0.2.0(0)'
+
+// В противном случае
+'0.1.0(0)' -> '0.1.1(0)'
+```
+
+Для iOS проектов есть еще опция поднятия мажорной версии. Для этого надо в проекте поднять мажорную версию в настройках проекта, она автоматически подтянется:
+```
+'1.2.0(0)' -> '2.0.0(0)'
+```
+
+в случае использования для андроид проектов надо сделать МР в плагин или вручную поправить файл версий
 
 ## Example
 
-Check out the [example `Fastfile`](fastlane/Fastfile) to see how to use this plugin. Try it by cloning the repo, running `fastlane install_plugins` and `bundle exec fastlane test`.
-
-**Note to author:** Please set up a sample project to make it easy for users to explore what your plugin does. Provide everything that is necessary to try out the plugin in this project (including a sample Xcode/Android project if necessary)
-
-## Run tests for this plugin
-
-To run both the tests, and code style validation, run
-
+Пример содержания файла с версиями:
 ```
-rake
+{"beta":"0.5.0(1)","rc":"0.4.0(0)","release":"0.3.2(0)"}
 ```
 
-To automatically fix many of the styling issues, use
+Пример использования в лейне Fastfile:
+
 ```
-rubocop -a
+versions_dir = '~/app_versions/comitet/versions.json'
+v = inno_get_beta_version(path: versions_dir)
+UI.message('Beta version = ' + v.toString)
+v = inno_increment_beta_version(path: versions_dir)
+
+increment_version_number(version_number: v.major.to_s + '.' + v.minor.to_s + '.' + '0')
+increment_build_number(build_number: v.build)
+
+build_ios_app(
+  scheme: "Comitet Beta",
+  export_method: "development"
+)
+
+appcenter_upload(
+  api_token: ENV["APPCENTER_ACCESS_TOKEN"],
+  owner_name: "Digital-Board",
+  owner_type: "organization",
+  app_name: "Komitet",
+  notify_testers: false,
+  release_notes: ENV["CI_COMMIT_TITLE"]
+)
+version_details = appcenter_fetch_version_number(
+  api_token: ENV["APPCENTER_ACCESS_TOKEN"],
+  owner_name: "Digital-Board",
+  app_name: "Komitet"
+)
+inno_save_beta_version(path: versions_dir, version: v)
 ```
-
-## Issues and Feedback
-
-For any other issues and feedback about this plugin, please submit it to this repository.
-
-## Troubleshooting
-
-If you have trouble using plugins, check out the [Plugins Troubleshooting](https://docs.fastlane.tools/plugins/plugins-troubleshooting/) guide.
-
-## Using _fastlane_ Plugins
-
-For more information about how the `fastlane` plugin system works, check out the [Plugins documentation](https://docs.fastlane.tools/plugins/create-plugin/).
-
-## About _fastlane_
-
-_fastlane_ is the easiest way to automate beta deployments and releases for your iOS and Android apps. To learn more, check out [fastlane.tools](https://fastlane.tools).
